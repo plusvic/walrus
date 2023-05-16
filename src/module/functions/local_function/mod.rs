@@ -643,21 +643,17 @@ fn append_instruction<'context>(
         }
 
         Operator::BrTable { table } => {
-            let mut blocks = Vec::with_capacity(table.len());
-            let mut default = None;
-            for pair in table.targets() {
-                let (target, is_default) = pair.unwrap();
+            let mut blocks = Vec::with_capacity(table.len() as usize);
+            let default = ctx.control(table.default() as usize).unwrap();
+            for target in table.targets() {
+                let target = target.unwrap();
                 let control = ctx.control(target as usize).unwrap();
-                if is_default {
-                    default = Some(control.block);
-                } else {
-                    blocks.push(control.block);
-                }
+                blocks.push(control.block);
             }
             ctx.alloc_instr(
                 BrTable {
                     blocks: blocks.into(),
-                    default: default.unwrap(),
+                    default: default.block,
                 },
                 loc,
             );

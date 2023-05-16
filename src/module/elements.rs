@@ -123,7 +123,7 @@ impl Module {
                 .map(|e| -> Result<_> {
                     Ok(match e? {
                         wasmparser::ElementItem::Func(f) => Some(ids.get_func(f)?),
-                        wasmparser::ElementItem::Null(_) => None,
+                        wasmparser::ElementItem::Expr(_) => None,
                     })
                 })
                 .collect::<Result<_>>()?;
