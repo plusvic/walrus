@@ -117,8 +117,7 @@ impl Module {
         let mut ret = Module::default();
         ret.config = config.clone();
         let mut indices = IndicesToIds::default();
-        let mut validator = Validator::new();
-        validator.wasm_features(WasmFeatures {
+        let mut validator = Validator::new_with_features(WasmFeatures {
             reference_types: !config.only_stable_features,
             multi_value: true,
             bulk_memory: !config.only_stable_features,
@@ -132,8 +131,8 @@ impl Module {
 
         for payload in Parser::new(0).parse_all(wasm) {
             match payload? {
-                Payload::Version { num, range } => {
-                    validator.version(num, &range)?;
+                Payload::Version { num, encoding, range } => {
+                    validator.version(num, encoding, &range)?;
                 }
                 Payload::DataSection(s) => {
                     validator
@@ -201,7 +200,7 @@ impl Module {
                     validator.code_section_start(count, &range)?;
                 }
                 Payload::CodeSectionEntry(body) => {
-                    let validator = validator.code_section_entry()?;
+                    let validator = validator.code_section_entry(&body)?;
                     local_functions.push((body, validator));
                 }
                 Payload::CustomSection {
@@ -235,7 +234,9 @@ impl Module {
                     unreachable!()
                 }
 
-                Payload::End => validator.end()?,
+                Payload::End(offset) => {
+                    validator.end(offset)?;
+                },
 
                 // the module linking proposal is not implemented yet.
                 Payload::AliasSection(s) => {
@@ -246,24 +247,41 @@ impl Module {
                     validator.instance_section(&s)?;
                     bail!("not supported yet");
                 }
-                Payload::ModuleSectionEntry {
+                Payload::ModuleSection {
                     parser: _,
-                    range: _,
-                } => {
-                    validator.module_section_entry();
-                    bail!("not supported yet");
-                }
-                Payload::ModuleSectionStart {
-                    count,
                     range,
-                    size: _,
                 } => {
-                    validator.module_section_start(count, &range)?;
+                    validator.module_section(&range)?;
                     bail!("not supported yet");
                 }
                 // exception handling is not implemented yet.
                 Payload::TagSection(s) => {
                     validator.tag_section(&s)?;
+                    bail!("not supported yet");
+                }
+                Payload::ComponentTypeSection(s) => {
+                    validator.component_type_section(&s)?;
+                    bail!("not supported yet");
+                }
+                Payload::ComponentImportSection(s) => {
+                    validator.component_import_section(&s)?;
+                    bail!("not supported yet");
+                }
+                Payload::ComponentFunctionSection(s) => {
+                    validator.component_function_section(&s)?;
+                    bail!("not supported yet");
+                }
+                Payload::ComponentSection { range, .. } => {
+                    validator.component_section(&range)?;
+                    bail!("not supported yet");
+                }
+                Payload::ComponentExportSection(s) => {
+                    validator.component_export_section(&s)?;
+                    bail!("not supported yet");
+
+                }
+                Payload::ComponentStartSection(s) => {
+                    validator.component_start_section(&s)?;
                     bail!("not supported yet");
                 }
             }

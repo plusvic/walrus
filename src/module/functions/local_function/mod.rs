@@ -254,24 +254,27 @@ impl LocalFunction {
 
 fn block_result_tys(
     ctx: &ValidationContext,
-    ty: wasmparser::TypeOrFuncType,
+    ty: wasmparser::BlockType,
 ) -> Result<Box<[ValType]>> {
     match ty {
-        wasmparser::TypeOrFuncType::Type(ty) => ValType::from_wasmparser_type(ty).map(Into::into),
-        wasmparser::TypeOrFuncType::FuncType(idx) => {
+        wasmparser::BlockType::Type(ty) => ValType::from_wasmparser_type(ty).map(Into::into),
+        wasmparser::BlockType::Empty => Ok(Vec::new().into_boxed_slice()),
+        wasmparser::BlockType::FuncType(idx) => {
             let ty = ctx.indices.get_type(idx)?;
             Ok(ctx.module.types.results(ty).into())
         }
+
     }
 }
 
 fn block_param_tys(
     ctx: &ValidationContext,
-    ty: wasmparser::TypeOrFuncType,
+    ty: wasmparser::BlockType,
 ) -> Result<Box<[ValType]>> {
     match ty {
-        wasmparser::TypeOrFuncType::Type(_) => Ok([][..].into()),
-        wasmparser::TypeOrFuncType::FuncType(idx) => {
+        wasmparser::BlockType::Type(_) => Ok([][..].into()),
+        wasmparser::BlockType::Empty => Ok(Vec::new().into_boxed_slice()),
+        wasmparser::BlockType::FuncType(idx) => {
             let ty = ctx.indices.get_type(idx)?;
             Ok(ctx.module.types.params(ty).into())
         }
@@ -349,7 +352,7 @@ fn append_instruction<'context>(
             let func = ctx.indices.get_func(function_index).unwrap();
             ctx.alloc_instr(Call { func }, loc);
         }
-        Operator::CallIndirect { index, table_index } => {
+        Operator::CallIndirect { index, table_index, .. } => {
             let type_id = ctx.indices.get_type(index).unwrap();
             let table = ctx.indices.get_table(table_index).unwrap();
             ctx.alloc_instr(CallIndirect { table, ty: type_id }, loc);

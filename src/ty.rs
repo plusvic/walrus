@@ -4,7 +4,6 @@ use crate::emit::{Emit, EmitContext};
 use crate::encode::Encoder;
 use crate::error::Result;
 use crate::tombstone_arena::Tombstone;
-use anyhow::bail;
 use id_arena::Id;
 use std::cmp::Ordering;
 use std::fmt;
@@ -154,10 +153,7 @@ pub enum ValType {
 
 impl ValType {
     pub(crate) fn from_wasmparser_type(ty: wasmparser::Type) -> Result<Box<[ValType]>> {
-        let v = match ty {
-            wasmparser::Type::EmptyBlockType => Vec::new(),
-            _ => vec![ValType::parse(&ty)?],
-        };
+        let v = vec![ValType::parse(&ty)?];
         Ok(v.into_boxed_slice())
     }
 
@@ -170,7 +166,6 @@ impl ValType {
             wasmparser::Type::V128 => Ok(ValType::V128),
             wasmparser::Type::ExternRef => Ok(ValType::Externref),
             wasmparser::Type::FuncRef => Ok(ValType::Funcref),
-            _ => bail!("not a value type"),
         }
     }
 
